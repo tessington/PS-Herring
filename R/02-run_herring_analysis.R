@@ -181,7 +181,7 @@ landcover_2016 <- ggplot(data = ord_2016, aes(x = pcoa.1, y = pcoa.2)) +
     # col = cols,
     arrow = arrow(length = unit(0.03, "npc"))
   ) +
-  scale_color_viridis_d(option = "plasma") + 
+  scale_color_viridis_d(option = "turbo") + 
   labs(col = "") +
   theme_classic()+
   theme(plot.margin = unit(c(1,1,1,1), "lines"),
@@ -226,7 +226,7 @@ landcover_change <- ggplot(data = pca.scores, aes(x = Comp.1, y = Comp.2)) +
     # col = cols,
     arrow = arrow(length = unit(0.03, "npc"))
   ) +
-  scale_color_viridis_d(option = "plasma") + 
+  scale_color_viridis_d(option = "turbo") + 
   labs(col = "Landcover") +
   theme_classic()+
   theme(plot.margin = unit(c(1,1,1,1), "lines"),
