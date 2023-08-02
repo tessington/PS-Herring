@@ -2,9 +2,7 @@
 ### Then grabs the landscape characteristics of each HUC
 ### Then gets a area-weighted total for each stock and each land use category
 ### This is repeated for 2001 and 2016
-require(readxl)
-require(tidyr)
-require(dplyr)
+impervious_by_stocklet <- function() {
 source("R/PS-HERRING-FUNS.R")
 
 ## get the HUCS associated with each stocklet ####
@@ -65,4 +63,5 @@ for (i in 1:length(stocklets)) {
    imp_by_stocklet[i,3] <- imp_by_stocklet[i,2] - sum(p.areas * imp.2001[imp.2001$HUC12%in% huc_codes,2])
 }
 }
-
+return(imp_by_stocklet)
+}

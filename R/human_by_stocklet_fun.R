@@ -1,8 +1,5 @@
 # get human population density for each stocklet
-
-require(readxl)
-require(dplyr)
-
+human_by_stocklet <- function() {
 # ge the HUCS associated with each stocklet
 stock.hucs <- get_stock_huc("data/Landscape characteristics by HUC12.xlsx")
 
@@ -41,7 +38,7 @@ huc_area <- as.data.frame(read_excel(path = "data/Landscape characteristics by H
 
 
 stocklets <- unique(stock.hucs$StockletID)
-human_by_stocklet <- data.frame(stockletID = stocklets,
+density_by_stocklet <- data.frame(stockletID = stocklets,
                                 census = NA,
                                 density = NA,
                                 change = NA)
@@ -53,9 +50,11 @@ for (i in 1:length(stocklets)) {
   human_count <- sum(human.huc.2016$Population[human.huc.2016$HUC12_ID %in% huc_codes$HUC12])
   human_density <- human_count / sum(huc_area$`Area (km2)`[huc_area$`HUC12 ID` %in% huc_codes$HUC12])
   human_change <- log(human_count / sum(human.huc.1998$Population[human.huc.1998$HUC12_ID %in% huc_codes$HUC12]))/(2016 - 1998)
-  human_by_stocklet[i,2:4] <- c(human_count, human_density, human_change)
+  density_by_stocklet[i,2:4] <- c(human_count, human_density, human_change)
 }
 
-  
+return(density_by_stocklet)
+}
+
   
 

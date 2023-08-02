@@ -3,9 +3,7 @@
 ### Then grabs the landscape characteristics of each HUC
 ### Then gets a area-weighted total for each stock and each land use category
 ### This is repeated for 2016 and 1996
-require(readxl)
-require(tidyr)
-require(dplyr)
+landuse_by_stocklet <- function() {
 source("R/PS-HERRING-FUNS.R")
 
 ## get the HUCS associated with each stocklet ####
@@ -117,17 +115,21 @@ stocklet_lc_1996$Palustrine <- rowSums(stocklet_lc_1996[,palustrine])
 
 rm(forest, developed, agriculture, estuarine, palustrine)
 
-
+# Rename some LCUC
 red_stocklet_lc_2016 <-  stocklet_lc_2016 %>%
   select(stockletID, Forest, Developed, Agriculture, Estuarine, Palustrine, all_of(lc_2_keep)) %>%
   rename(`Scrub / Shrub` = Scrub_Shrub, 
          `Snow / Ice` = Snow_Ice,
-         `Unconsolidated Shore` = UnconsolidatedShore)
+         `Un. Shore` = UnconsolidatedShore,
+         `Bare Land` = BareLand)
 
 red_stocklet_lc_1996 <-  stocklet_lc_1996 %>%
   select(stockletID, Forest, Developed, Agriculture, Estuarine, Palustrine, all_of(lc_2_keep))
 red_stocklet_lc_1996 <- dplyr::rename(red_stocklet_lc_1996, `Scrub / Shrub` = Scrub_Shrub, 
          `Snow / Ice` = Snow_Ice,
-         `Unconsolidated Shore` = UnconsolidatedShore)
+         `Un. Shore` = UnconsolidatedShore,
+         `Bare Land` = BareLand)
 
 
+return(list(red_stocklet_lc_1996 = red_stocklet_lc_1996, red_stocklet_lc_2016 = red_stocklet_lc_2016))
+}
