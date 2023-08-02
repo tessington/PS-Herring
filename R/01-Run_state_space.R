@@ -11,38 +11,36 @@ wdfw.data.raw <- read.csv(file = "data/wdfw-data.csv", header = T)
 thedata <- reshape2::melt(wdfw.data.raw, id = "YEAR", variable.name = "stocklet", value.name = "biomass")
 thedata$basin <- rep(NA, times = nrow(thedata))
 
-## assign basins                     
-south <- c("SQUAXIN", "PURDY", "WOLLOCHET", "QM")
-central <- c("ELLIOTT", "PO.PM")
-hoodcanal <- c("SOUTH_HC", "QUILCENE", "PTGAMBLE")
-sanjuandefuca <- c("KILISUT", "DISCOVERY", "SEQUIM", "DUNGENESS")
-whidbey <- c("PTSUSAN", "HOLMES", "SKAGIT")
-north <- c("FIDALGO", "SAMISH_PORTAGE", "SEMIAHMOO", "CHERRYPT", "NWSJI", "INT.SJI")
+stocklet.names <- c("SQUAXIN", 
+                    "PURDY", 
+                    "WOLLOCHET", 
+                    "QM",
+                    "ELLIOTT", 
+                    "PO.PM",
+                    "SOUTH_HC", 
+                    "QUILCENE", 
+                    "PTGAMBLE",
+                    "KILISUT", 
+                    "DISCOVERY", 
+                    "SEQUIM", 
+                    "DUNGENESS",
+                    "PTSUSAN", 
+                    "HOLMES", 
+                    "SKAGIT",
+                    "FIDALGO",
+                    "SAMISH_PORTAGE",
+                    "SEMIAHMOO",
+                    "CHERRYPT",
+                    "NWSJI",
+                    "INT.SJI"
+)
 
-south.index <- which(thedata$stocklet %in% south)
-central.index <- which(thedata$stocklet %in% central) 
-hoodcanal.index <- which(thedata$stocklet %in% hoodcanal)
-sanjuandefuca.index <- which(thedata$stocklet %in% sanjuandefuca)
-whidbey.index <- which(thedata$stocklet %in% whidbey)
-north.index <- which(thedata$stocklet %in% north)
-thedata$basin[south.index] <- "south"
-thedata$basin[central.index] <- "central"
-thedata$basin[hoodcanal.index] <- "hoodcanal"
-thedata$basin[sanjuandefuca.index] <- "sanjaundefuca"
-thedata$basin[whidbey.index] <- "whidbey"
-thedata$basin[north.index] <- "north"
-
-thedata$basin <- as.factor(thedata$basin)
-
-# configure regression analysis
-stocklet.names <- c(south, central, hoodcanal, sanjuandefuca, whidbey, north)
-# dataframe to hold output
 
 
 # configure TMB model
 
-compile("R/exponential_state_space.cpp")
-dyn.load(dynlib("R/exponential_state_space"))
+compile("TMB/exponential_state_space.cpp")
+dyn.load(dynlib("TMB/exponential_state_space"))
 
 n.stocks <- length(stocklet.names)
 regression.output <- data.frame(stocklet = stocklet.names,
@@ -107,5 +105,5 @@ regression.output$beta_se[i] <- fixed[1,2]
 regression.output$sigma_proc[i] <- transformed[1,1]
 }
 
-saveRDS(regression.output, file = "state_space_output.RDS")
+saveRDS(regression.output, file = "analysis/state_space_output.RDS")
 
