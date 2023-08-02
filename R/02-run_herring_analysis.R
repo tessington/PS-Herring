@@ -147,69 +147,101 @@ ord_predictor_2016 <- stats::cmdscale(distance, k = 2, eig = T)
 colnames(ord_predictor_2016$points) <- c("axs1", "axs2")
 ax1 <- ord_predictor_2016$points[,1]
 ax2 <- ord_predictor_2016$points[,2]
+ord_2016 <- tibble(pcoa.1 = ax1,
+                   pcoa.2 = ax2)
+ord.labels <- colnames(red_lc_2016_tf)
 
 # get correlation between each transformed land cover type and each axis
 getcor <- function(x,y) cor(x,y)
-cor_ax1 <- apply(X = red_lc_2016_tf, MAR = 2, FUN = getcor, y = ax1)
-cor_ax2 <- apply(X = red_lc_2016_tf, MAR = 2, FUN = getcor, y = ax2)
-lcuc <- names(cor_ax1)
-mult <- 0.3
-plot_df2016 <- tibble(lcuc = lcuc,
-                  ax1start = 0,
-                  ax2start = 0,
-                  ax1load = cor_ax1  * mult,
-                  ax2load = cor_ax2 * mult)
-pcoa_points <- tibble(stocklet = lcuc.list$red_stocklet_lc_2016$stockletID,
-                      axs1 = ax1,
-                      axs2 = ax2
-)
-p1 <- ggplot(plot_df2016, aes(x = ax1load, y = ax2load, col = lcuc)) +
-  geom_segment(aes(x = (ax1start), y = (ax2start), xend = (ax1load), yend = (ax2load)), arrow = arrow(),
-               linewidth = 1.5,
-               show.legend = FALSE) + 
-  geom_line(aes(group = lcuc), linewidth = 1.5) + 
-  scale_color_viridis_d(option = "turbo") +
-  xlim(c(-0.5, 0.6)) + 
-  ylim(c(-0.5,0.6)) +
-  xlab("PCoA Axis 1") +
+corr.ax1 <- apply(X = red_lc_2016_tf, MAR = 2, FUN = getcor, y = ax1)
+corr.ax2 <- apply(X = red_lc_2016_tf, MAR = 2, FUN = getcor, y = ax2)
+
+mult <- 0.2 # adjusts overall size of arrows
+arrow.dat <- tibble(lc = ord.labels,
+                    x.0 = 0,
+                    y.0 = 0,
+                    x.end = corr.ax1* mult ,
+                    y.end = corr.ax2 * mult )
+
+
+landcover_2016 <- ggplot(data = ord_2016, aes(x = pcoa.1, y = pcoa.2)) +
+  geom_point(size = 2.5) + 
+  xlab("PCoA Axis 1") + 
   ylab("PCoA Axis 2") +
-geom_point(data = pcoa_points, aes(x = axs1, y = axs2),
-               col = "black",
-               show.legend = F)  +
-  theme(legend.title = element_blank(),
-        legend.position = c(0.85, 0.8))
+  geom_segment(
+    data = arrow.dat,
+    aes(
+      x = x.0,
+      y = y.0,
+      xend = x.end,
+      yend = y.end,
+      colour = lc
+    ),
+    linewidth = 1.25,
+    # col = cols,
+    arrow = arrow(length = unit(0.03, "npc"))
+  ) +
+  scale_color_viridis_d(option = "plasma") + 
+  labs(col = "") +
+  theme_classic()+
+  theme(plot.margin = unit(c(1,1,1,1), "lines"),
+        axis.text = element_text(size=12, colour = "black"), 
+        axis.title = element_text(size = 18),
+        panel.grid = element_blank(),
+        legend.text= element_text(size = 12),
+        legend.title= element_text(size = 18),
+        legend.position = c(0.15, 0.75),
+        legend.background = element_blank()
+  )
 
-#### PCA on change in Land cover / Land  use
+
+##### Ordination on landcover change ####
 red_change_tf <- red_lc_2016_tf - red_lc_1996_tf
-
 ord_predictor_change <- princomp(x = red_change_tf, scores = T, cor = T)
-ax1_loading<- ord_predictor_change$loadings[,1]
-ax2_loading<- ord_predictor_change$loadings[,2]
-x_change <- ord_predictor_change$scores[,1]
-y_change <- ord_predictor_change$scores[,2]
-# Plot Ordination
-mult = 5
-plot_df <- tibble(lcuc = rownames(ord_predictor_change$loadings),
-                  ax1start = 0,
-                  ax2start = 0,
-                  ax1load = ax1_loading * mult,
-                  ax2load = ax2_loading * mult)
-ord_points <- tibble(ord1 = ord_predictor_change$scores[,1],
-                     ord2 = ord_predictor_change$scores[,2])
+ord.cors <- ord_predictor_change$loadings
 
-p2 <- ggplot(plot_df, aes(x = ax1load, y = ax2load, col = lcuc)) +
-  geom_segment(aes(x = (ax1start), y = (ax2start), xend = (ax1load), yend = (ax2load)), arrow = arrow(),
-               linewidth = 1.5,
-               show.legend = FALSE) + 
-  scale_color_viridis_d(option = "turbo") +
-  xlab("PCA Axis 1") +
+ord.labels <- colnames(red_change_tf)
+
+mult <- 3 # adjusts overall size of arrows
+arrow.dat <- tibble(lc = rownames(ord_predictor_change$loadings),
+                    x.0 = 0,
+                    y.0 = 0,
+                    x.end = ord_predictor_change$loadings[,1] * mult,
+                    y.end = ord_predictor_change$loadings[,2] * mult)
+pca.scores <- as.data.frame(ord_predictor_change$scores)
+
+landcover_change <- ggplot(data = pca.scores, aes(x = Comp.1, y = Comp.2)) +
+  xlab("PCA Axis 1") + 
   ylab("PCA Axis 2") +
-  geom_point(data = ord_points, aes(x = ord1, y = ord2),
-             col = "black",
-             show.legend = F)  
-saveplot <- T
-allplot <- grid.arrange(p1, p2, nrow = 1, ncol = 2)
-if (saveplot) ggsave(filename = "landscape_ordination.png", plot = allplot)
+  geom_segment(
+    data = arrow.dat,
+    aes(
+      x = x.0,
+      y = y.0,
+      xend = x.end,
+      yend = y.end,
+      colour = lc
+    ),
+    size = 1.25,
+    # col = cols,
+    arrow = arrow(length = unit(0.03, "npc"))
+  ) +
+  scale_color_viridis_d(option = "plasma") + 
+  labs(col = "Landcover") +
+  theme_classic()+
+  theme(plot.margin = unit(c(1,1,1,1), "lines"),
+        axis.text = element_text(size=12, colour = "black"), 
+        axis.title = element_text(size = 18),
+        panel.grid = element_blank(),
+        legend.position = "none"
+  ) +
+  geom_point(size = 2.5) 
+
+library(gridExtra)
+ordinations <- gridExtra::grid.arrange(landcover_2016, landcover_change, nrow = 1, ncol = 2)
+ggsave("graphics/ordinations.png", ordinations, width = 12, height = 6, units = "in", device = "png")
+
+
 # Relate stock status to watersheds ####
 imp_by_stocklet <- impervious_by_stocklet()
 density_by_stocklet <- human_by_stocklet()
