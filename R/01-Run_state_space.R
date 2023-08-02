@@ -1,7 +1,6 @@
 library(reshape2)
 library(ggplot2)
 library(dplyr)
-library(tweedie)
 library(TMB)
 
 
@@ -65,7 +64,10 @@ manage_data <- function(dat) {
   return(list(y = y, t = t))
 }
 
-# loop through each stock, each time fitting a linear model, save the fitted slope and p value in dataframe
+# loop through each stock, fit state space model for each
+
+stateSpaceResult<- list()
+
 for (i in 1:n.stocks) {
 stocklet.2.use <- stocklet.names[i]
 dat <- dplyr::filter(thedata, stocklet == stocklet.2.use, YEAR>=earliest.year)
@@ -97,6 +99,7 @@ polygon(c(all.years, rev(all.years)), c(exp(u - 2 * u_se), rev(exp(u + 2 * u_se)
 fixed <- summary(rep, "fixed")
 # get fixed effects of transformed variables
 transformed <- summary(rep, "report")
+stateSpaceResult[[i]] <- cbind(Year = min(data.2.use$t):max(data.2.use$t), Est = u, SE = u_se)
 
 print(fixed)
 print(transformed)
@@ -104,6 +107,7 @@ regression.output$beta[i] <- fixed[1,1]
 regression.output$beta_se[i] <- fixed[1,2]
 regression.output$sigma_proc[i] <- transformed[1,1]
 }
-
+names(stateSpaceResult) <- stocklet.names
 saveRDS(regression.output, file = "analysis/state_space_output.RDS")
+saveRDS(stateSpaceResult, file = "analysis/state_space_estimates.RDS")
 
