@@ -138,3 +138,41 @@ calc_aicc <-function(fit) {
   AIC <- AIC(fit)
   return(AIC + 2* k * (k+1) / (n - k - 1))
 }
+
+fit_models <- function(new.df, wt = NULL, family = "gaussian") {
+  
+  fit.null <- glm(as.formula(paste0(yvar, "~ 1")), data = new.df, weights  = wt, family = family)
+  fit.lc <- glm(as.formula(paste0(yvar, "~ scale(coord1) + scale(coord2)")),  data = new.df, weights = wt, family = family)
+  fit.imp <- glm(as.formula(paste0(yvar, "~ scale(ImpervPer)")), data = new.df, weights = wt, family = family)
+  fit.human <- glm(as.formula(paste0(yvar, "~ scale(density)")),  data = new.df, weights = wt, family = family)
+  fit.lc.change <- glm(as.formula(paste0(yvar, "~ scale(changecoord1) + scale(changecoord2) + scale(changecoord3)")),  
+                       data = new.df, weights = wt, family = family)
+  fit.imp.change <- glm(as.formula(paste0(yvar, "~ scale(changeImperv)")), data = new.df, weights = wt)
+  fit.human.change <- glm(as.formula(paste0(yvar, "~ scale(change)")),  data = new.df, weights = wt)
+  
+  AIC <- matrix(NA, nrow = 7, ncol = 1)
+  rownames(AIC) <- c("null", "landcover", "impervious", "human density", "change landcover", "change impervious", "change human density")
+  
+  AIC[1,1] <- calc_aicc(fit.null)
+  AIC[2,1] <- calc_aicc(fit.lc)
+  AIC[3,1] <- calc_aicc(fit.imp)
+  AIC[4,1] <- calc_aicc(fit.human)
+  AIC[5,1] <- calc_aicc(fit.lc.change)
+  AIC[6,1] <- calc_aicc(fit.imp.change)
+  AIC[7,1] <- calc_aicc(fit.human.change)
+  
+  DAIC <- AIC - min(AIC)
+  colnames(DAIC) <- "delta AIC"
+  
+  fit.coefs <- matrix(NA, nrow = 7, ncol = 3)
+  fit.coefs[2,1:2] <- coef(fit.lc)[2:3]
+  fit.coefs[3,1] <- coef(fit.imp)[2]
+  fit.coefs[4,1] <- coef(fit.human)[2]
+  fit.coefs[5,1:3] <- coef(fit.lc.change)[2:4]
+  fit.coefs[6,1] <- coef(fit.imp.change)[2]
+  fit.coefs[7,1] <- coef(fit.human.change)[2]
+  rownames(fit.coefs) <- rownames(DAICfit)
+  
+  return(list(DAIC = DAIC, fit.coefs = fit.coefs))
+}
+

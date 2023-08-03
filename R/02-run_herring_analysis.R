@@ -266,7 +266,11 @@ new.df <- inner_join(data.frame(stocklet = shortstocklet,
                                    stocklet,
                                    lb,
                                    beta,
-                                   beta_se))
+                                   beta_se,
+                                   tval,
+                                   ave_to_highest,
+                                   first_to_last,
+                                   freq_zeros))
 
 # now add human density
 density_by_stocklet <- rename(density_by_stocklet, stocklet = stockletID)
@@ -287,80 +291,24 @@ new.df <- inner_join(new.df,
 
 ## For binary response variable "lowest biomass" ####
 # convert Yes / No in "lowest_biomass" to 1 and 0
-new.df$lb_num <- 1
+new.df$lb_num <- 1L
 new.df$lb <- as.character(new.df$lb) # remove factors from low biomass
-new.df$lb_num[new.df$lb=="no"] <- 0
+new.df$lb_num[new.df$lb=="no"] <- 0L
 new.df$wt <- 1/new.df$beta_se
 
 
 # model selection on the probability that lowest biomass is in recent time period
+wt = NULL
+lb.fits <- fit_models(yvar = "lb_num", new.df = new.df, family = "binomial")
 
-fit.null <- glm(lb_num ~ 1 , family = binomial, data = new.df)
-fit.lc <- glm(lb_num ~ scale(coord1) + scale(coord2), family = binomial, data = new.df)
-fit.imp <- glm(lb_num ~ scale(ImpervPer), family = binomial, data = new.df)
-fit.human <- glm(lb_num ~ scale(density), family = binomial, data = new.df)
-fit.lc.change <- glm(lb_num ~  scale(changecoord1) + scale(changecoord2) + scale(changecoord3), family = binomial, data = new.df)
-fit.imp.change <- glm(lb_num ~ scale(changeImperv), family = binomial, data = new.df)
-fit.human.change <- glm(lb_num ~ scale(change), family = binomial, data = new.df)
 
-AIClb <- matrix(NA, nrow = 7, ncol = 1)
-AIClb[1,1] <- calc_aicc(fit.null)
-AIClb[2,1] <- calc_aicc(fit.lc)
-AIClb[3,1] <- calc_aicc(fit.imp)
-AIClb[4,1] <- calc_aicc(fit.human)
-AIClb[5,1] <- calc_aicc(fit.lc.change)
-AIClb[6,1] <- calc_aicc(fit.imp.change)
-AIClb[7,1] <- calc_aicc(fit.human.change)
-
-lb.coefs <- matrix(NA, nrow = 7, ncol = 3)
-lb.coefs[2,1:2] <- coef(fit.lc)[2:3]
-lb.coefs[3,1] <- coef(fit.imp)[2]
-lb.coefs[4,1] <- coef(fit.human)[2]
-lb.coefs[5,1:3] <- coef(fit.lc.change)[2:4]
-lb.coefs[6,1] <- coef(fit.imp.change)[2]
-lb.coefs[7,1] <- coef(fit.human.change)[2]
-
-rownames(AIClb) <- c("null", "landcover", "impervious", "human density", "change landcover", "change impervious", "change human density")
-DAIClb <- AIClb - min(AIClb)
-colnames(DAIClb) <- "delta AIC"
-print(DAIClb)
-rownames(lb.coefs) <- rownames(AIClb)
-print(lb.coefs)
+print(lb.fits$DAIC)
+print(lb.fits$fit.coefs)
 ## For Population Growth Rate ####
-
-fit.null <- glm(beta ~ 1, data = new.df, weights = wt)
-fit.lc <- glm(beta ~ scale(coord1) + scale(coord2),  data = new.df, weights = wt)
-fit.imp <- glm(beta~ scale(ImpervPer), data = new.df, weights = wt)
-fit.human <- glm(beta ~ scale(density),  data = new.df, weights = wt)
-fit.lc.change <- glm(beta ~  scale(changecoord1) + scale(changecoord2) + scale(changecoord3),  data = new.df, weights = wt)
-fit.imp.change <- glm(beta ~ scale(changeImperv), data = new.df, weights = wt)
-fit.human.change <- glm(beta ~ scale(change),  data = new.df, weights = wt)
-
-AICbeta <- matrix(NA, nrow = 7, ncol = 1)
-rownames(AICbeta) <- c("null", "landcover", "impervious", "human density", "change landcover", "change impervious", "change human density")
-
-AICbeta[1,1] <- calc_aicc(fit.null)
-AICbeta[2,1] <- calc_aicc(fit.lc)
-AICbeta[3,1] <- calc_aicc(fit.imp)
-AICbeta[4,1] <- calc_aicc(fit.human)
-AICbeta[5,1] <- calc_aicc(fit.lc.change)
-AICbeta[6,1] <- calc_aicc(fit.imp.change)
-AICbeta[7,1] <- calc_aicc(fit.human.change)
-
-
-DAICbeta <- AICbeta - min(AICbeta)
-colnames(DAICbeta) <- "delta AIC"
-print(DAICbeta)
-
-beta.coefs <- matrix(NA, nrow = 7, ncol = 3)
-beta.coefs[2,1:2] <- coef(fit.lc)[2:3]
-beta.coefs[3,1] <- coef(fit.imp)[2]
-beta.coefs[4,1] <- coef(fit.human)[2]
-beta.coefs[5,1:3] <- coef(fit.lc.change)[2:4]
-beta.coefs[6,1] <- coef(fit.imp.change)[2]
-beta.coefs[7,1] <- coef(fit.human.change)[2]
-rownames(beta.coefs) <- rownames(DAICbeta)
-print(beta.coefs)
+wt <- new.df$wt
+beta.fits <- fit_models(yvar = "beta", new.df = new.df, wt = wt)
+print(beta.fits$DAIC)
+print(beta.fits$fit.coefs)
 
 ## Make plots showing supported relationships ####
 r1 <- ggplot(data = new.df, aes(x = density, y = lb_num)) +
@@ -377,4 +325,16 @@ if (saveplot) ggsave(reg_plot,
                      filename = "graphics/plot_regression.png",
                   height = 350,
                   width = 700)
+
+### Run regressions on other stock status metrics ####
+
+t.fits <- fit_models(yvar = "tval", new.df = new.df)
+first_last.fits <- fit_models(yvar = "first_to_last", new.df = new.df)
+ave_high.fits <- fit_models(yvar = "ave_to_highest", new.df = new.df)
+freq_zeros.fits <- fit_models(yvar = "freq_zeros", new.df = new.df)
+
+print(t.fits$DAIC)
+print(first_last.fits$DAIC)
+print(ave_high.fits$DAIC)
+print(freq_zeros.fits$DAIC)
 
