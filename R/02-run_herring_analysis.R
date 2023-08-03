@@ -296,12 +296,12 @@ new.df$wt <- 1/new.df$beta_se
 # model selection on the probability that lowest biomass is in recent time period
 
 fit.null <- glm(lb_num ~ 1 , family = binomial, data = new.df)
-fit.lc <- glm(lb_num ~ ImpervPer, family = binomial, data = new.df)
-fit.imp <- glm(lb_num ~ ImpervPer, family = binomial, data = new.df)
-fit.human <- glm(lb_num ~ density, family = binomial, data = new.df)
-fit.lc.change <- glm(lb_num ~  changecoord1 + changecoord2 + changecoord3, family = binomial, data = new.df)
-fit.imp.change <- glm(lb_num ~ changeImperv, family = binomial, data = new.df)
-fit.human.change <- glm(lb_num ~ change, family = binomial, data = new.df)
+fit.lc <- glm(lb_num ~ scale(coord1) + scale(coord2), family = binomial, data = new.df)
+fit.imp <- glm(lb_num ~ scale(ImpervPer), family = binomial, data = new.df)
+fit.human <- glm(lb_num ~ scale(density), family = binomial, data = new.df)
+fit.lc.change <- glm(lb_num ~  scale(changecoord1) + scale(changecoord2) + scale(changecoord3), family = binomial, data = new.df)
+fit.imp.change <- glm(lb_num ~ scale(changeImperv), family = binomial, data = new.df)
+fit.human.change <- glm(lb_num ~ scale(change), family = binomial, data = new.df)
 
 AIClb <- matrix(NA, nrow = 7, ncol = 1)
 AIClb[1,1] <- calc_aicc(fit.null)
@@ -312,20 +312,29 @@ AIClb[5,1] <- calc_aicc(fit.lc.change)
 AIClb[6,1] <- calc_aicc(fit.imp.change)
 AIClb[7,1] <- calc_aicc(fit.human.change)
 
+lb.coefs <- matrix(NA, nrow = 7, ncol = 3)
+lb.coefs[2,1:2] <- coef(fit.lc)[2:3]
+lb.coefs[3,1] <- coef(fit.imp)[2]
+lb.coefs[4,1] <- coef(fit.human)[2]
+lb.coefs[5,1:3] <- coef(fit.lc.change)[2:4]
+lb.coefs[6,1] <- coef(fit.imp.change)[2]
+lb.coefs[7,1] <- coef(fit.human.change)[2]
+
 rownames(AIClb) <- c("null", "landcover", "impervious", "human density", "change landcover", "change impervious", "change human density")
 DAIClb <- AIClb - min(AIClb)
 colnames(DAIClb) <- "delta AIC"
 print(DAIClb)
-
+rownames(lb.coefs) <- rownames(AIClb)
+print(lb.coefs)
 ## For Population Growth Rate ####
 
 fit.null <- glm(beta ~ 1, data = new.df, weights = wt)
-fit.lc <- glm(beta ~ ImpervPer,  data = new.df, weights = wt)
-fit.imp <- glm(beta~ ImpervPer, data = new.df, weights = wt)
-fit.human <- glm(beta ~ density,  data = new.df, weights = wt)
-fit.lc.change <- glm(beta ~  changecoord1 + changecoord2 + changecoord3,  data = new.df, weights = wt)
-fit.imp.change <- glm(beta ~ changeImperv, data = new.df, weights = wt)
-fit.human.change <- glm(beta ~ change,  data = new.df, weights = wt)
+fit.lc <- glm(beta ~ scale(coord1) + scale(coord2),  data = new.df, weights = wt)
+fit.imp <- glm(beta~ scale(ImpervPer), data = new.df, weights = wt)
+fit.human <- glm(beta ~ scale(density),  data = new.df, weights = wt)
+fit.lc.change <- glm(beta ~  scale(changecoord1) + scale(changecoord2) + scale(changecoord3),  data = new.df, weights = wt)
+fit.imp.change <- glm(beta ~ scale(changeImperv), data = new.df, weights = wt)
+fit.human.change <- glm(beta ~ scale(change),  data = new.df, weights = wt)
 
 AICbeta <- matrix(NA, nrow = 7, ncol = 1)
 rownames(AICbeta) <- c("null", "landcover", "impervious", "human density", "change landcover", "change impervious", "change human density")
@@ -342,6 +351,16 @@ AICbeta[7,1] <- calc_aicc(fit.human.change)
 DAICbeta <- AICbeta - min(AICbeta)
 colnames(DAICbeta) <- "delta AIC"
 print(DAICbeta)
+
+beta.coefs <- matrix(NA, nrow = 7, ncol = 3)
+beta.coefs[2,1:2] <- coef(fit.lc)[2:3]
+beta.coefs[3,1] <- coef(fit.imp)[2]
+beta.coefs[4,1] <- coef(fit.human)[2]
+beta.coefs[5,1:3] <- coef(fit.lc.change)[2:4]
+beta.coefs[6,1] <- coef(fit.imp.change)[2]
+beta.coefs[7,1] <- coef(fit.human.change)[2]
+rownames(beta.coefs) <- rownames(DAICbeta)
+print(beta.coefs)
 
 ## Make plots showing supported relationships ####
 r1 <- ggplot(data = new.df, aes(x = density, y = lb_num)) +
