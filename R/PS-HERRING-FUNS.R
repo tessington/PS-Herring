@@ -57,7 +57,7 @@ calc_lb <- function(data_ts) {
   # first get the first year of data
   years <- data_ts$YEAR[which(!is.na(data_ts$biomass))]
   if (min(years) >= 2000) {
-    lb.val = "no"
+    lb.val = NA
   } else {
     min.b <- min(data_ts$biomass, na.rm = T)
     min.b.recent <- min(data_ts$biomass[data_ts$YEAR >2010], na.rm = T)

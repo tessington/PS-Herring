@@ -291,9 +291,10 @@ new.df <- inner_join(new.df,
 
 ## For binary response variable "lowest biomass" ####
 # convert Yes / No in "lowest_biomass" to 1 and 0
-new.df$lb_num <- 1L
+new.df$lb_num <- NA
 new.df$lb <- as.character(new.df$lb) # remove factors from low biomass
 new.df$lb_num[new.df$lb=="no"] <- 0L
+new.df$lb_num[new.df$lb=="yes"] <- 1L
 new.df$wt <- 1/new.df$beta_se
 
 
@@ -311,10 +312,10 @@ print(beta.fits$DAIC)
 print(beta.fits$fit.coefs)
 
 ## Make plots showing supported relationships ####
-r1 <- ggplot(data = new.df, aes(x = density, y = lb_num)) +
+r1 <- ggplot(data = new.df, aes(x = change, y = lb_num)) +
   geom_point() +
-  labs(x = expression(paste('2016 Human Density (# / ',km^2, ')')), y = "Lowest Biomass post 2010?")
-  
+  labs(expression(paste('Change in Human Density (# / ',km^2, ')')), y = "Lowest Biomass post 2010?")
+
 r2 <- ggplot(data = new.df, aes(x = change, y = beta)) +
   geom_point() +
   labs(x = expression(paste('Change in Human Density (# / ',km^2, ')')), y = expression(paste('Population Growth Rate (',yr^-1, ')')))
@@ -333,8 +334,5 @@ first_last.fits <- fit_models(yvar = "first_to_last", new.df = new.df)
 ave_high.fits <- fit_models(yvar = "ave_to_highest", new.df = new.df)
 freq_zeros.fits <- fit_models(yvar = "freq_zeros", new.df = new.df)
 
-print(t.fits$DAIC)
-print(first_last.fits$DAIC)
-print(ave_high.fits$DAIC)
-print(freq_zeros.fits$DAIC)
+print(cbind(t.fits$DAIC,first_last.fits$DAIC, ave_high.fits$DAIC,freq_zeros.fits$DAIC))
 
